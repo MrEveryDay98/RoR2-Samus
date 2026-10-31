@@ -57,7 +57,7 @@ namespace SamusMod
         //   this shouldn't even have to be said
         public const string MODUID = "com.dgosling.Samus";
         public const string MODNAME = "Samus";
-        public const string MODVERSION = "2.2.3";
+        public const string MODVERSION = "2.2.5";
 
         // a prefix for name tokens to prevent conflicts- please capitalize all name tokens for convention
         public const string developerPrefix = "DG";
@@ -81,7 +81,6 @@ namespace SamusMod
 
             Modules.Assets.Init();
             if (cancel) return;
-            Modules.Shaders.init();
             Modules.Tokens.Init();
             Modules.Prefabs.Init();
             Modules.Buffs.Init();
@@ -138,6 +137,7 @@ namespace SamusMod
 
                    On.RoR2.UserProfile.LoadDefaultProfile += ExtraInputs.OnLoadDefaultProfile;
             On.RoR2.SaveSystem.LoadUserProfiles += ExtraInputs.OnLoadUserProfiles;
+            On.RoR2.UserProfile.FillDefaultJoystickMaps += ExtraInputs.OnFillDefaultJoystickMaps;
                 On.RoR2.UI.SettingsPanelController.Awake += SettingsPanelControllerAwake;
             if (Modules.EmoteAPICompatibility.enabled)
             {
@@ -162,8 +162,8 @@ namespace SamusMod
                 var sl = self.skillLocator;
                 if (sl.secondary&&!SkillStates.BaseStates.BaseSamus.morphBall)
                 {
-                    int temp = sl.secondary.bonusStockFromBody - self.inventory.GetItemCount(RoR2Content.Items.SecondarySkillMagazine);
-                    int temp2 = self.inventory.GetItemCount(RoR2Content.Items.SecondarySkillMagazine);
+                    int temp = sl.secondary.bonusStockFromBody - self.inventory.GetItemCountEffective(RoR2Content.Items.SecondarySkillMagazine);
+                    int temp2 = self.inventory.GetItemCountEffective(RoR2Content.Items.SecondarySkillMagazine);
                     sl.secondary.SetBonusStockFromBody((temp2 * 5)+temp);
 
                 }

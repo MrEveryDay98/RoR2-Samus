@@ -29,7 +29,8 @@
         "R2API.Language.dll",
         "R2API.Loadout.dll",
         "R2API.Prefab.dll",
-        "R2API.Sound.dll"
+        "R2API.Sound.dll",
+        "ShaderSwapper.dll"
     ],
     "autoReferenced": true,
     "defineConstraints": [],

@@ -32,10 +32,7 @@ namespace SamusMod.Modules
                 }
             }
 
-            var joystickMap = self.joystickMaps?.FirstOrDefault();
-            var keyboardMap = self.keyboardMaps?.FirstOrDefault();
-
-            FillActionMaps(RewiredAction.autoFire, keyboardMap, joystickMap);
+            FillActionMaps(RewiredAction.autoFire, self.keyboardMaps, self.joystickMaps);
 
             orig(self);
         }
@@ -73,33 +70,81 @@ internal static void OnLoadDefaultProfile(On.RoR2.UserProfile.orig_LoadDefaultPr
             }
         }
 
+        internal static void OnFillDefaultJoystickMaps(On.RoR2.UserProfile.orig_FillDefaultJoystickMaps orig, UserProfile self)
+        {
+            orig(self);
+            AddMissingBindings(self);
+        }
+
         private static void AddMissingBindings(UserProfile userProfile)
         {
             AddActionMaps(RewiredAction.autoFire, userProfile);
         }
-        private static void FillActionMaps(RewiredAction action, ControllerMap_Editor keyboardMap, ControllerMap_Editor joystickMap)
+        private static void FillActionMaps(RewiredAction action, List<ControllerMap_Editor> keyboardMaps, List<ControllerMap_Editor> joystickMaps)
         {
-            if (joystickMap != null && joystickMap.actionElementMaps.All(map => map.actionId != action.ActionId))
+            if (joystickMaps != null)
             {
-                joystickMap.actionElementMaps.Add(action.DefaultJoystickMap);
+                foreach (var joystickMap in joystickMaps)
+                {
+                    if (joystickMap.categoryId == 0 && joystickMap.actionElementMaps.All(map => map.actionId != action.ActionId))
+                    {
+                        joystickMap.actionElementMaps.Add(action.DefaultJoystickMap);
+                    }
+                }
             }
-            if (keyboardMap != null && keyboardMap.actionElementMaps.All(map => map.actionId != action.ActionId))
+            if (keyboardMaps != null)
             {
-                keyboardMap.actionElementMaps.Add(action.DefaultKeyboardMap);
+                foreach (var keyboardMap in keyboardMaps)
+                {
+                    if (keyboardMap.categoryId == 0 && keyboardMap.actionElementMaps.All(map => map.actionId != action.ActionId))
+                    {
+                        keyboardMap.actionElementMaps.Add(action.DefaultKeyboardMap);
+                    }
+                }
             }
         }
         private static void AddActionMaps(RewiredAction action,UserProfile userProfile)
         {
-            // Rewired's internals are obfuscated and renamed every build, so use its public CreateElementMap API instead.
-            if (userProfile.joystickMap.AllMaps.All(map => map.actionId != action.ActionId))
+            foreach (var (_, joystickMap) in userProfile.HardwareJoystickMaps2)
             {
-                userProfile.joystickMap.CreateElementMap(action.ActionId, Pole.Positive, action.DefaultJoystickKey, ControllerElementType.Button, AxisRange.Full, false);
+                if (joystickMap.AllMaps.All(map => map.actionId != action.ActionId))
+                {
+                    var defaultMap = action.DefaultJoystickMap;
+                    joystickMap.CreateElementMap(defaultMap.actionId, defaultMap.axisContribution, defaultMap.elementIdentifierId, defaultMap.elementType, defaultMap.axisRange, defaultMap.invert);
+                    LinkToControllerMap(defaultMap, joystickMap);
+                }
             }
 
             if (userProfile.keyboardMap.AllMaps.All(map => map.actionId != action.ActionId))
             {
-                userProfile.keyboardMap.CreateElementMap(action.ActionId, Pole.Positive, (KeyCode)action.DefaultKeyboardKey, ModifierKey.None, ModifierKey.None, ModifierKey.None);
+                var defaultMap = action.DefaultKeyboardMap;
+                userProfile.keyboardMap.CreateElementMap(defaultMap.actionId, defaultMap.axisContribution, defaultMap.elementIdentifierId, action.DefaultJoystickMap.elementType, action.DefaultJoystickMap.axisRange, action.DefaultJoystickMap.invert, out var createdMap);
+                createdMap._keyboardKeyCode = action.DefaultKeyboardKey;
+                LinkToControllerMap(defaultMap, userProfile.keyboardMap);
             }
+        }
+
+        // Rewired's internals are obfuscated and renamed every build, so find the method that attaches an
+        // ActionElementMap to its ControllerMap by shape: the only non-public ActionElementMap method taking just a ControllerMap.
+        private static MethodInfo linkToControllerMap;
+        private static void LinkToControllerMap(ActionElementMap elementMap, ControllerMap controllerMap)
+        {
+            if (linkToControllerMap == null)
+            {
+                linkToControllerMap = typeof(ActionElementMap)
+                    .GetMethods(BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly)
+                    .FirstOrDefault(method => method.ReturnType == typeof(void)
+                                           && method.GetParameters().Length == 1
+                                           && method.GetParameters()[0].ParameterType == typeof(ControllerMap));
+            }
+
+            if (linkToControllerMap == null)
+            {
+                SamusPlugin.logger.LogWarning("Could not find the Rewired method that links an element map to its controller map.");
+                return;
+            }
+
+            linkToControllerMap.Invoke(elementMap, new object[] { controllerMap });
         }
 
         // The method on UserData that wraps its lists in read-only collections is obfuscated and renamed every build.
@@ -141,7 +186,7 @@ internal static void OnLoadDefaultProfile(On.RoR2.UserProfile.orig_LoadDefaultPr
         {
             get
             {
-               return _defaultJoystickMap ?? new ActionElementMap(ActionId, ControllerElementType.Button, DefaultJoystickKey, Pole.Positive, AxisRange.Full);
+               return _defaultJoystickMap ?? (_defaultJoystickMap = new ActionElementMap(ActionId, ControllerElementType.Button, DefaultJoystickKey, Pole.Positive, AxisRange.Positive));
             }
         }
 
@@ -150,7 +195,7 @@ internal static void OnLoadDefaultProfile(On.RoR2.UserProfile.orig_LoadDefaultPr
         {
             get
             {
-                return _defaultKeyboardMap ?? new ActionElementMap(ActionId, ControllerElementType.Button, (int)DefaultKeyboardKey-21) { _keyboardKeyCode = DefaultKeyboardKey }; ;
+                return _defaultKeyboardMap ?? (_defaultKeyboardMap = new ActionElementMap(ActionId, ControllerElementType.Button, (int)DefaultKeyboardKey-21) { _keyboardKeyCode = DefaultKeyboardKey });
             }
         
         

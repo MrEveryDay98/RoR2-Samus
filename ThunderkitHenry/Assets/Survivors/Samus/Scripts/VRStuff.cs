@@ -55,14 +55,6 @@ namespace SamusMod.Modules
 
                 GameObject temp;
                 temp = hudHandle.transform.parent.GetComponentInChildren<RoR2.UI.HUD>().gameObject;
-                // Screen damage is a post process effect now rather than a material: tint it yellow to match the visor and remove the distortion.
-                var screenDamage = hudHandle.transform.parent.GetComponent<RoR2.PostProcessing.ScreenDamage>();
-                screenDamage.DistortionScale = 0f;
-                var screenDamageVolume = screenDamage.GetComponentInChildren<UnityEngine.Rendering.PostProcessing.PostProcessVolume>();
-                if (screenDamageVolume && screenDamageVolume.profile.TryGetSettings<ScreenDamagePP>(out var screenDamageSettings))
-                {
-                    screenDamageSettings.VignetteTint.value = new Color(1, 1, 0.419608f, 1);
-                }
                 if (temp.name.Contains("HUDSimple"))
                     samusHUD.bossHealthBarRoot = temp.GetComponent<RoR2.UI.HUD>().mainUIPanel.transform.Find("SpringCanvas/TopCenterCluster/BossHealthBarRoot").gameObject;
                 else

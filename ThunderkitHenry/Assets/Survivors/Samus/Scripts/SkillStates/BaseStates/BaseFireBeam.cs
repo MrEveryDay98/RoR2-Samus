@@ -208,7 +208,8 @@ namespace SamusMod.SkillStates.BaseStates
                             hitEffectPrefab = this.bulletHitEffect,
                             isCrit = this.RollCrit(),
                             radius = .1f,
-                            smartCollision = true
+                            smartCollision = true,
+                            damageType = new DamageTypeCombo(DamageTypeCombo.GenericPrimary, DamageTypeExtended.Generic, DamageSource.Primary)
 
 
 

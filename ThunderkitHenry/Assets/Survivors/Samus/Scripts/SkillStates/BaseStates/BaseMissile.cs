@@ -128,7 +128,7 @@ namespace SamusMod.SkillStates.BaseStates
             Vector3 initialDirection = Vector3.up + UnityEngine.Random.insideUnitSphere * 0.1f;
             float force = 200f;
             bool addMissileProc = true;
-            int num1 = characterBody.inventory?.GetItemCount(DLC1Content.Items.MoreMissile)??0;
+            int num1 = characterBody.inventory?.GetItemCountEffective(DLC1Content.Items.MoreMissile)??0;
             float num2 = Mathf.Max(1f, (1 + 0.5f * (num1 - 1)));
             InputBankTest component = inputBank;
             ProcChainMask procChainMask1 = procChainMask;

@@ -336,8 +336,12 @@ namespace SamusMod.Modules
 
 		public IEnumerator FinalizeAsync(FinalizeAsyncArgs args)
 		{
+			IEnumerator upgradeStubbedShaders = ShaderSwapper.ShaderSwapper.UpgradeStubbedShadersAsync(Assets.mainAssetBundle);
+			while (upgradeStubbedShaders.MoveNext())
+			{
+				yield return upgradeStubbedShaders.Current;
+			}
 			args.ReportProgress(1f);
-			yield break;
 		}
 	}
 }

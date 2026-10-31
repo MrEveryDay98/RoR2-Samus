@@ -126,7 +126,6 @@ namespace SamusMod.Misc
         public GameObject bossHealthBarRoot;
         //Transform baseWidgetPivot;
         BossGroup bossInfo;
-        Material damageMat;
         private void FixedUpdate()
         {
 
@@ -261,7 +260,7 @@ namespace SamusMod.Misc
             float fullHealth = Mathf.Ceil(character.healthComponent.fullCombinedHealth);
             uint numEnergyTanks = 6;
             uint filledTanks = 0;
-            filledTanks = (uint)character.inventory.GetItemCount(RoR2Content.Items.ExtraLife);
+            filledTanks = (uint)character.inventory.GetItemCountEffective(RoR2Content.Items.ExtraLife);
 
             if (!init)
                 energyLow = isEnergyLow();
@@ -523,7 +522,6 @@ namespace SamusMod.Misc
             //light.color = lightColor;
             GameObject temp = gameObject.transform.parent.GetComponentInChildren<RoR2.UI.HUD>().gameObject;
 
-            // ScreenDamage no longer exposes a material (it is a post process volume now), and damageMat was never read.
             //Transform lightXF = light.transform;
             //lightXF.Translate(0, .08f, -.4f);
             ////Transform testTrans = light.transform;
