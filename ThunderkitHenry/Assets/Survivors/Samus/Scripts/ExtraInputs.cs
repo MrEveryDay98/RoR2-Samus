@@ -119,8 +119,58 @@ internal static void OnLoadDefaultProfile(On.RoR2.UserProfile.orig_LoadDefaultPr
             {
                 var defaultMap = action.DefaultKeyboardMap;
                 userProfile.keyboardMap.CreateElementMap(defaultMap.actionId, defaultMap.axisContribution, defaultMap.elementIdentifierId, action.DefaultJoystickMap.elementType, action.DefaultJoystickMap.axisRange, action.DefaultJoystickMap.invert, out var createdMap);
-                createdMap._keyboardKeyCode = action.DefaultKeyboardKey;
+                if (createdMap != null)
+                {
+                    createdMap._keyboardKeyCode = action.DefaultKeyboardKey;
+                }
                 LinkToControllerMap(defaultMap, userProfile.keyboardMap);
+            }
+        }
+
+        // The profile bindings above are added when profiles load, which can happen before Rewired is ready, and then
+        // silently do nothing. So also make sure the maps the local player is actually using have the autofire binding.
+        // The gameplay map is the one that contains Jump.
+        internal static void EnsureLiveBindings(Player player)
+        {
+            if (player == null || !ReInput.isReady)
+            {
+                return;
+            }
+
+            try
+            {
+                var action = RewiredAction.autoFire;
+                var jump = ReInput.mapping.GetAction("Jump");
+                if (jump == null)
+                {
+                    return;
+                }
+
+                foreach (var controller in player.controllers.Controllers)
+                {
+                    if (controller.type != ControllerType.Keyboard && controller.type != ControllerType.Joystick)
+                    {
+                        continue;
+                    }
+
+                    foreach (var map in player.controllers.maps.GetMaps(controller.type, controller.id))
+                    {
+                        if (!map.ContainsAction(jump.id) || map.ContainsAction(action.ActionId))
+                        {
+                            continue;
+                        }
+
+                        bool added = controller.type == ControllerType.Keyboard
+                            ? map.CreateElementMap(action.ActionId, Pole.Positive, (KeyCode)action.DefaultKeyboardKey, ModifierKey.None, ModifierKey.None, ModifierKey.None)
+                            : map.CreateElementMap(action.ActionId, Pole.Positive, action.DefaultJoystickKey, ControllerElementType.Button, AxisRange.Positive, false);
+                        SamusPlugin.logger.LogInfo($"Added the autofire binding to the live {controller.type} map '{map.name}': {added}");
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                SamusPlugin.logger.LogWarning("Failed to add the autofire binding to the live maps");
+                SamusPlugin.logger.LogError(e);
             }
         }
 

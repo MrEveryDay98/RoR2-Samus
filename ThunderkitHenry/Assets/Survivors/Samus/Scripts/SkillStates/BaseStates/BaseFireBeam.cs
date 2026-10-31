@@ -162,6 +162,9 @@ namespace SamusMod.SkillStates.BaseStates
 
                     this.projectilePrefab.GetComponent<Misc.colision_test>().inTransform = this.guncon.transform;
 
+                    SamusEffects.ChargedMuzzleFlash(this.gameObject, "gunCon");
+                    SamusEffects.Flash(this.guncon.transform.position, new Color(1f, 0.75f, 0.3f), 4f + 8f * this.charge, 10f + 14f * this.charge, 0.3f);
+
                     FireProjectileInfo fireProjectileInfo = new FireProjectileInfo
                     {
                         projectilePrefab = this.projectilePrefab,

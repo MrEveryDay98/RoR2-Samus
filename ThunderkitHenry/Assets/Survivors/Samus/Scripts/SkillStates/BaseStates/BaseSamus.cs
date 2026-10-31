@@ -85,6 +85,9 @@ namespace SamusMod.SkillStates.BaseStates
             PlayerCharacterMasterController = characterBody.master.playerCharacterMasterController;
             
                 PlayerCharacterMasterController.CanSendBodyInput(PlayerCharacterMasterController.networkUser, out _, out player, out _, out _);
+            Modules.ExtraInputs.EnsureLiveBindings(player);
+            ApplyModelScale();
+            SetupGunAim();
             if (skillLocator.utility.skillDef == morphBallRef)
             {
                 MissileSkill = skillLocator.FindSkillByFamilyName("SamusSecondary");
@@ -163,8 +166,12 @@ namespace SamusMod.SkillStates.BaseStates
                         break;
                 }
             }
-            if (effectiveAuth)
+            if (effectiveAuth && player != null)
             {
+                // Bindings can be missing when the profile was loaded before Rewired was ready, so keep checking.
+                if (Time.frameCount % 120 == 0)
+                    Modules.ExtraInputs.EnsureLiveBindings(player);
+
                 if ( !morphBall && player.GetButtonDown(Modules.RewiredAction.autoFire.ActionId))
                 {
                     bool a = skillLocator.primary.skillDef == autoFireSkill;
@@ -173,8 +180,44 @@ namespace SamusMod.SkillStates.BaseStates
                         skillLocator.primary.UnsetSkillOverride(skillLocator.primary, autoFireSkill, GenericSkill.SkillOverridePriority.Contextual);
                     else
                         skillLocator.primary.SetSkillOverride(skillLocator.primary, autoFireSkill, GenericSkill.SkillOverridePriority.Contextual);
+
+                    Chat.AddMessage("<style=cIsUtility>Samus</style> auto-fire " + (a ? "<style=cIsDamage>OFF</style>" : "<style=cIsHealing>ON</style>"));
                 }
             }
+        }
+
+        // Points the arm cannon where the player is aiming. In VR the controller already does that.
+        private void SetupGunAim()
+        {
+            if (VRAPI.Utils.IsUsingMotionControls(characterBody)) return;
+
+            var model = modelLocator ? modelLocator.modelTransform : null;
+            if (!model || model.GetComponent<Misc.SamusGunAim>()) return;
+
+            var pivot = this.ChildLocator.FindChild("A_ArmR");
+            var muzzle = this.ChildLocator.FindChild("gunCon");
+            if (!pivot || !muzzle) return;
+
+            var aim = model.gameObject.AddComponent<Misc.SamusGunAim>();
+            aim.pivot = pivot;
+            aim.muzzle = muzzle;
+            aim.inputBank = inputBank;
+            aim.body = characterBody;
+        }
+
+        // Scales the model once, remembering its original scale so re-entering this state doesn't compound it.
+        private void ApplyModelScale()
+        {
+            var model = modelLocator ? modelLocator.modelTransform : null;
+            if (!model) return;
+
+            var scaler = model.GetComponent<Misc.SamusModelScale>();
+            if (!scaler)
+            {
+                scaler = model.gameObject.AddComponent<Misc.SamusModelScale>();
+                scaler.baseScale = model.localScale;
+            }
+            model.localScale = scaler.baseScale * Modules.Config.modelScale.Value;
         }
         
 
@@ -336,9 +379,13 @@ namespace SamusMod.SkillStates.BaseStates
                 //if (base.healthComponent.TakeDamage())
                 //    Debug.Log("test");
 
-                if (this.characterMotor.velocity != Vector3.zero)
+                // Roll the ball about the horizontal axis perpendicular to its travel, at the speed it covers the ground.
+                Vector3 groundVelocity = new Vector3(this.velocity.x, 0f, this.velocity.z);
+                if (groundVelocity.sqrMagnitude > 0.01f)
                 {
-                    this.ball.transform.Rotate(Vector3.up, (-amount));
+                    float radius = Mathf.Max(0.1f, this.collider.bounds.extents.y);
+                    float degrees = groundVelocity.magnitude * Time.fixedDeltaTime / radius * Mathf.Rad2Deg;
+                    this.ball.transform.Rotate(Vector3.Cross(Vector3.up, groundVelocity.normalized), degrees, Space.World);
 
                     //Debug.Log("vel: " + this.velocity);
                     //Debug.Log("local vel " + Ivelocity);

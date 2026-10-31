@@ -39,6 +39,7 @@ namespace SamusMod.SkillStates.BaseStates
         [SerializeField]
         public GameObject chargeEffectInstance { get; set; }
         private bool isPlayingSound;
+        private Light chargeLight;
         public override void OnEnter()
         {
             base.OnEnter();
@@ -68,6 +69,17 @@ namespace SamusMod.SkillStates.BaseStates
                 this.chargeEffectInstance.transform.Rotate(90, 0, 0);
             }
 
+            if (transform)
+            {
+                var lightObject = new GameObject("SamusChargeLight");
+                lightObject.transform.SetParent(transform, false);
+                chargeLight = lightObject.AddComponent<Light>();
+                chargeLight.type = LightType.Point;
+                chargeLight.color = new Color(1f, 0.75f, 0.3f);
+                chargeLight.shadows = LightShadows.None;
+                chargeLight.intensity = 0f;
+            }
+
             base.PlayAnimation("Gesture, Override", "chargeLoop", "Charge.playbackRate", this.duration);
 
             this.defaultCrosshairPrefab = base.characterBody.defaultCrosshairPrefab;
@@ -93,6 +105,7 @@ namespace SamusMod.SkillStates.BaseStates
             {
                 base.PlayAnimation("Gesture, Override", "BufferEmpty");
             }
+            if (chargeLight) EntityState.Destroy(chargeLight.gameObject);
             size = chargeEffectInstance.transform.localScale;
             EntityState.Destroy(this.chargeEffectInstance);
             base.OnExit();
@@ -112,6 +125,11 @@ namespace SamusMod.SkillStates.BaseStates
 
 
             float charge = this.calcCharge();
+            if (chargeLight)
+            {
+                chargeLight.intensity = 0.5f + 5f * charge;
+                chargeLight.range = 3f + 9f * charge;
+            }
             TryNextState(charge);
 
 

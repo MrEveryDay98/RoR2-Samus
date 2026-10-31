@@ -79,6 +79,7 @@ namespace SamusMod
 
             Modules.Config.ReadConfig();
 
+            Modules.SamusEffects.Init();
             Modules.Assets.Init();
             if (cancel) return;
             Modules.Tokens.Init();

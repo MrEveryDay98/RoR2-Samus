@@ -8,6 +8,7 @@ namespace SamusMod.Modules
         //Config entry variables go here. Use these to get the config settings in Mod Manager.
         public static ConfigEntry<bool> characterEnabled;
         public static ConfigEntry<bool> enableHud;
+        public static ConfigEntry<float> modelScale;
         private static ConfigEntry<bool> customStats;
         private static ConfigEntry<float> baseMaxHealth;
         private static ConfigEntry<float> baseRegen;
@@ -73,6 +74,7 @@ namespace SamusMod.Modules
 
             //General
             characterEnabled = SamusPlugin.instance.Config.Bind<bool>(new ConfigDefinition("General", "Character Enabled"), true, new ConfigDescription("Set to false to disable this Survivor."));
+            modelScale = SamusPlugin.instance.Config.Bind<float>(new ConfigDefinition("General", "Model Scale"), 1.25f, new ConfigDescription("Multiplies the size of Samus's model. 1 is the original size.", new AcceptableValueRange<float>(0.5f, 3f)));
             //AutoFireBind = SamusPlugin.instance.Config.Bind<bool>(new ConfigDefinition("General", "AutoFire Toggle Enabled"), false, new ConfigDescription("If this is enabled, it will let you bind a key in the menu to toggle the charge beam to an autofire mode when held down instead of charging."));
             //forceUnlock = SamusPlugin.instance.Config.Bind<bool>(new ConfigDefinition("General", "Force Unlock"), false, new ConfigDescription("Set to true to force this Survivor's content to be unlocked."));
 

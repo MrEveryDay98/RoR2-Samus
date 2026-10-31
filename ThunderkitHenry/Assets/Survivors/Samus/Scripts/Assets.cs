@@ -104,6 +104,8 @@ namespace SamusMod.Modules
 					AkEvent b = Missile.AddComponent<AkEvent>();
 					b = item;
                 }
+				SamusEffects.AddImpactBurst(Missile, 4f);
+				SamusEffects.AddMissileTrail(Missile, 1f);
             }
 			//contentPack.FindAsset("projectilePrefabs", "SamusaltMissile", out object result2);
 			altMissile = mainContentPack.projectilePrefabs[0];
@@ -115,6 +117,8 @@ namespace SamusMod.Modules
 				AkEvent akEvent = altMissile.AddComponent<AkEvent>();
 				akGameObj = refer.GetComponent<AkGameObj>();
 				akEvent = refer.GetComponent<AkEvent>();
+				SamusEffects.AddImpactBurst(altMissile, 3f);
+				SamusEffects.AddMissileTrail(altMissile, 0.8f);
 			}
 			//contentPack.FindAsset("projectilePrefabs", "SamusSuperMissile", out object res);
 			sMissile = mainContentPack.projectilePrefabs[6];
@@ -124,6 +128,8 @@ namespace SamusMod.Modules
 				GameObject refer = LegacyResourcesAPI.Load<GameObject>("prefabs/projectiles/mageicebolt");
 				AkEvent akEvent = sMissile.AddComponent<AkEvent>();
 				akEvent = refer.GetComponent<AkEvent>();
+				SamusEffects.AddImpactBurst(sMissile, 8f);
+				SamusEffects.AddMissileTrail(sMissile, 1.6f);
 			}
 			//contentPack.FindAsset("projectilePrefabs", "SamusBeam", out object ree);
 			beam = mainContentPack.projectilePrefabs[1];
@@ -132,6 +138,8 @@ namespace SamusMod.Modules
 				GameObject refer = LegacyResourcesAPI.Load<GameObject>("prefabs/projectiles/mageicebolt");
 				AkEvent akEvent = beam.AddComponent<AkEvent>();
 				akEvent = refer.GetComponent<AkEvent>();
+				// The projectile's scale grows with charge, so a full charge gets the biggest explosion.
+				SamusEffects.AddImpactBurst(beam, 1.5f, 5f);
 			}
 			//else
 			//	SamusPlugin.logger.LogError("Didn't Load Beam Prefab From ContentPack!");
