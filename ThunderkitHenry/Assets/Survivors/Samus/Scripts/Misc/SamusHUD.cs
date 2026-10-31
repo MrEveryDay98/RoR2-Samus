@@ -523,7 +523,7 @@ namespace SamusMod.Misc
             //light.color = lightColor;
             GameObject temp = gameObject.transform.parent.GetComponentInChildren<RoR2.UI.HUD>().gameObject;
 
-            damageMat = temp.GetComponent<CameraRigController>().GetComponentInChildren<RoR2.PostProcessing.ScreenDamage>().mat;
+            // ScreenDamage no longer exposes a material (it is a post process volume now), and damageMat was never read.
             //Transform lightXF = light.transform;
             //lightXF.Translate(0, .08f, -.4f);
             ////Transform testTrans = light.transform;

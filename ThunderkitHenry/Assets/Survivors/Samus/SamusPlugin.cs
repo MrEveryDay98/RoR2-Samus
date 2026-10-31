@@ -90,8 +90,15 @@ namespace SamusMod
 
 
             ExtraInputs.AddActionsToInputCatalog();
-            var userDataInit = typeof(UserData).GetMethod(nameof(UserData.wVZZKoPFwEvodLvLcYNvVAPKpUj), BindingFlags.NonPublic | BindingFlags.Instance);
-            HookEndpointManager.Add(userDataInit, (Action<Action<UserData>, UserData>)ExtraInputs.AddCustomActions);
+            var userDataInit = ExtraInputs.FindUserDataInitMethod();
+            if (userDataInit != null)
+            {
+                HookEndpointManager.Add(userDataInit, (Action<Action<UserData>, UserData>)ExtraInputs.AddCustomActions);
+            }
+            else
+            {
+                logger.LogWarning("Could not find Rewired UserData initializer, the autofire toggle will not be registered.");
+            }
 
 
             //CustomBind();
@@ -131,7 +138,7 @@ namespace SamusMod
 
                    On.RoR2.UserProfile.LoadDefaultProfile += ExtraInputs.OnLoadDefaultProfile;
             On.RoR2.SaveSystem.LoadUserProfiles += ExtraInputs.OnLoadUserProfiles;
-                On.RoR2.UI.SettingsPanelController.Start += SettingsPanelControllerStart;
+                On.RoR2.UI.SettingsPanelController.Awake += SettingsPanelControllerAwake;
             if (Modules.EmoteAPICompatibility.enabled)
             {
                 On.RoR2.SurvivorCatalog.Init += Modules.EmoteAPICompatibility.SurvivorCatalog_Init;
@@ -219,14 +226,20 @@ namespace SamusMod
 
         }
 
-        internal static void SettingsPanelControllerStart(On.RoR2.UI.SettingsPanelController.orig_Start orig, RoR2.UI.SettingsPanelController self)
+        internal static void SettingsPanelControllerAwake(On.RoR2.UI.SettingsPanelController.orig_Awake orig, RoR2.UI.SettingsPanelController self)
         {
             orig(self);
             if (self.name == "SettingsSubPanel, Controls (M&KB)" || self.name == "SettingsSubPanel, Controls (Gamepad)")
             {
-                var jumpBindingTransform = self.transform.Find("Scroll View/Viewport/VerticalLayout/SettingsEntryButton, Binding (Jump)");
+                // Find the Jump binding by what it is rather than by its hierarchy path, which the game has reshuffled before.
+                var jumpBinding = self.GetComponentsInChildren<RoR2.UI.InputBindingControl>(true).FirstOrDefault(control => control.actionName == "Jump");
+                if (!jumpBinding)
+                {
+                    logger.LogWarning($"Could not find the Jump binding in '{self.name}', the autofire binding will not be added to the settings menu.");
+                    return;
+                }
 
-                Misc.uiHooks.AddActionBindingToSettings(Modules.RewiredAction.autoFire.Name, jumpBindingTransform);
+                Misc.uiHooks.AddActionBindingToSettings(Modules.RewiredAction.autoFire.Name, jumpBinding.transform);
             }
         }
         private void CharacterMaster_OnBodyDamaged(On.RoR2.CharacterMaster.orig_OnBodyDamaged orig, CharacterMaster self, DamageReport damageReport)
@@ -307,7 +320,7 @@ namespace SamusMod
 
         //}
 
-        private void DamageTrail_DoDamage(On.RoR2.DamageTrail.orig_DoDamage orig, DamageTrail self)
+        private void DamageTrail_DoDamage(On.RoR2.DamageTrail.orig_DoDamage orig, DamageTrail self, float damageInterval)
         {
             if (self)
             {
@@ -318,7 +331,7 @@ namespace SamusMod
                 }
 
             }
-            orig(self);
+            orig(self, damageInterval);
         }
 
 

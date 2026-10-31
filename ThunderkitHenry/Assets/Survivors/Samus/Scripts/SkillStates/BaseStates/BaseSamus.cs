@@ -84,7 +84,7 @@ namespace SamusMod.SkillStates.BaseStates
 
             PlayerCharacterMasterController = characterBody.master.playerCharacterMasterController;
             
-                PlayerCharacterMasterController.CanSendBodyInput(PlayerCharacterMasterController.networkUser, out _, out player, out _);
+                PlayerCharacterMasterController.CanSendBodyInput(PlayerCharacterMasterController.networkUser, out _, out player, out _, out _);
             if (skillLocator.utility.skillDef == morphBallRef)
             {
                 MissileSkill = skillLocator.FindSkillByFamilyName("SamusSecondary");

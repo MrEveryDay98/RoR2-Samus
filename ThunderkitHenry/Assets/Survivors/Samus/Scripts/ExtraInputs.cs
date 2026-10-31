@@ -1,6 +1,7 @@
 ﻿using System.Linq;
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using UnityEngine;
 using Rewired;
 using Rewired.Data;
@@ -18,7 +19,18 @@ namespace SamusMod.Modules
 
         internal static void AddCustomActions(Action<UserData> orig, UserData self)
         {
-            self.actions?.Add(RewiredAction.autoFire);
+            if (self.actions != null)
+            {
+                var existing = self.actions.FirstOrDefault(action => action.id == RewiredAction.autoFire.ActionId || action.name == RewiredAction.autoFire.Name);
+                if (existing == null)
+                {
+                    self.actions.Add(RewiredAction.autoFire);
+                }
+                else if (existing.name != RewiredAction.autoFire.Name)
+                {
+                    SamusPlugin.logger.LogWarning($"Rewired action id {existing.id} is already used by '{existing.name}', the autofire toggle will not work.");
+                }
+            }
 
             var joystickMap = self.joystickMaps?.FirstOrDefault();
             var keyboardMap = self.keyboardMaps?.FirstOrDefault();
@@ -78,17 +90,31 @@ internal static void OnLoadDefaultProfile(On.RoR2.UserProfile.orig_LoadDefaultPr
         }
         private static void AddActionMaps(RewiredAction action,UserProfile userProfile)
         {
+            // Rewired's internals are obfuscated and renamed every build, so use its public CreateElementMap API instead.
             if (userProfile.joystickMap.AllMaps.All(map => map.actionId != action.ActionId))
             {
-                userProfile.joystickMap.AMpxarTReIdQulZiNSMMkbJtMRz(action.DefaultJoystickMap);
-                action.DefaultJoystickMap.cNRtEejHCWUdzrhmpthsuslcVcs(userProfile.joystickMap);
+                userProfile.joystickMap.CreateElementMap(action.ActionId, Pole.Positive, action.DefaultJoystickKey, ControllerElementType.Button, AxisRange.Full, false);
             }
 
             if (userProfile.keyboardMap.AllMaps.All(map => map.actionId != action.ActionId))
             {
-                userProfile.keyboardMap.AMpxarTReIdQulZiNSMMkbJtMRz(action.DefaultKeyboardMap);
-                action.DefaultKeyboardMap.cNRtEejHCWUdzrhmpthsuslcVcs(userProfile.keyboardMap);
+                userProfile.keyboardMap.CreateElementMap(action.ActionId, Pole.Positive, (KeyCode)action.DefaultKeyboardKey, ModifierKey.None, ModifierKey.None, ModifierKey.None);
             }
+        }
+
+        // The method on UserData that wraps its lists in read-only collections is obfuscated and renamed every build.
+        // It is the only non-public, parameterless, void instance method on UserData besides SetDefaultValuesOnCreation.
+        internal static MethodInfo FindUserDataInitMethod()
+        {
+            var candidates = typeof(UserData)
+                .GetMethods(BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly)
+                .Where(method => method.ReturnType == typeof(void)
+                              && method.GetParameters().Length == 0
+                              && !method.IsSpecialName
+                              && method.Name != "SetDefaultValuesOnCreation")
+                .ToList();
+
+            return candidates.Count == 1 ? candidates[0] : null;
         }
 
         private static void Deconstruct<TKey, TValue>(this KeyValuePair<TKey, TValue> pair, out TKey key, out TValue value)
